@@ -8,7 +8,8 @@ from spacy.symbols import ORTH, POS, NOUN, VERB
 
 nlp_spacy = spacy.load("en_core_web_sm")
 
-to_veg_link = "https://www.allrecipes.com/recipe/7757/tiramisu-cheesecake/"
+to_veg_link = "https://www.allrecipes.com/recipe/24074/alysias-basic-meat-lasagna/"
+fat_to_h_link = "https://www.allrecipes.com/recipe/16167/beef-bourguignon-i/"
 
 descriptions = ['baked', 'beaten', 'blanched', 'boiled', 'boiling', 'boned', 'breaded', 'brewed', 'broken', 'chilled',
 		'chopped', 'cleaned', 'coarse', 'cold', 'cooked', 'cool', 'cooled', 'cored', 'creamed', 'crisp', 'crumbled',
@@ -23,7 +24,7 @@ descriptions = ['baked', 'beaten', 'blanched', 'boiled', 'boiling', 'boned', 'br
 		'toasted', 'torn', 'trimmed', 'wrapped', 'vained', 'warm', 'washed', 'weak', 'zested', 'wedged',
 		'skinned', 'gutted', 'browned', 'patted', 'raw', 'flaked', 'deveined', 'shelled', 'shucked', 'crumbs',
 		'halves', 'squares', 'zest', 'peel', 'uncooked', 'butterflied', 'unwrapped', 'unbaked', 'warmed', 'unseasoned',
-        'toasted', 'bunch', 'pre-cooked', 'all-purpose', 'taste', 'no-boil']
+        'toasted', 'bunch', 'pre-cooked', 'taste', 'no-boil']
 
 conjunction_list = ['and', 'or', 'but', 'for', 'to']
 
@@ -39,7 +40,7 @@ cooking_utensils = ['apple corker', 'apple cutter', 'baster', 'biscuit cutter', 
 cooking_actions = ["preheat", "chop", "mince", "dice", "slice", "julienne", "grate", "peel", "crush", "mash", "puree", "blend", "whisk", "beat",
         "stir", "mix", "knead", "roll", "cut", "trim", "season", "marinate", "brine", "roast", "bake", "broil", "grill", "fry", "saute", "simmer",
         "boil", "steam", "poach", "blanch", "deglaze", "reduce", "glaze", "baste", "stuff", "garnish", "plate", "serve", "store", "freeze", "defrost",
-        "thaw", "clean", "sanitize", "set up", "clean up", "heat", "discard"]
+        "thaw", "clean", "sanitize", "set up", "clean up", "heat", "discard", "pour"]
 
 meat_to_veg = {
     'beef': 'portobello mushrooms',
@@ -349,15 +350,31 @@ def HalfIt(all_ingredients):
                     if i.unit != "":
                         i.unit = i.unit[0:len(i.unit)-1]
                     
-def Transform(type):
-    for i in all_ingredients:
-        for j in type.keys():
-            if i.ingredient == j:
-                i.ingredient = type[j]
+def Transform(type, steps_list):
+    #for i in all_ingredients:
+    #    for j in type.keys():
+    #        if i.ingredient == j:
+    #           i.i_text = i.i_text.replace(i.ingredient, type[j])
+    #            i.ingredient = type[j]
+
+    for step in steps_list:
+        print(step.step_text)
+        for i in step.ingredients:
+            print(i.ingredient)
+            try:
+                print("TRANSFORM")
+                print(i.ingredient)
+                i.i_text = i.i_text.replace(i.ingredient, type[i.ingredient])
+                step.step_text = step.step_text.replace(i.ingredient, type[i.ingredient])
+                i.ingredient = type[i.ingredient]
+                print(i.i_text)
+            except:
+                continue
+                
 
 def findIngredient(text):
     for i in all_ingredients:
-        if text == i.ingredient:
+        if text in i.ingredient:
             return i
 
 #helper to check if word is already present in a list
@@ -369,11 +386,11 @@ def checkList(text, list):
     return is_present
 
 def setStepFields(step):
-    banned_words = ["heat", "sauce"]
+    banned_words = ["heat", "sauce", "degrees", "c", "f", "temperature"]
 
     step_text = step.step_text.lower()
     spacy_doc = nlp_spacy(step_text)
-    print("STEP: " + step_text)
+   # print("STEP: " + step_text)
     #print(all_ingredients_text)
 
     step_ingredients = []
@@ -381,41 +398,49 @@ def setStepFields(step):
     step_acts = []
 
     for chunk in spacy_doc.noun_chunks:
-        print("TEXT: " + chunk.text, "ROOT: " + chunk.root.text, "ROOT DEP: " + chunk.root.dep_, "ROOT HEAD: " + chunk.root.head.text)
+        #print("TEXT: " + chunk.text, "ROOT: " + chunk.root.text, "ROOT DEP: " + chunk.root.dep_, "ROOT HEAD: " + chunk.root.head.text)
         if chunk.root.text in cooking_utensils:
             step_mats.append(chunk.text)
+            step.materials.append(chunk.text)
         if chunk.text in all_ingredients_text:
             step_ingredients.append(chunk.text)
-        elif checkList(chunk.root.text, all_ingredients_text):
+            step.ingredients.append(findIngredient(chunk.text))
+        elif checkList(chunk.root.text, all_ingredients_text) and not any(word in chunk.text for word in banned_words):
             step_ingredients.append(chunk.text)
+            step.ingredients.append(findIngredient(chunk.text))
 
 
     for token in spacy_doc:
         #print("TEXT: " + token.text, "POS: " + token.pos_, "TAG: " + token.tag_)
         if (token.text in cooking_actions or token.pos_ == "VERB") and token.text not in step_acts:
             step_acts.append(token.text)
+            step.actions.append(token.text)
         elif token.pos_ == "NOUN" and token.text in cooking_utensils:
             if not checkList(token.text, step_mats):
                 step_mats.append(token.text)
-        elif token.text in all_ingredients_text and token.text not in step_ingredients:
+                step.materials.append(chunk.text)
+        elif token.text in all_ingredients_text and not checkList(token.text, step_ingredients):
             # if we are here, we have found an ingredient
             # add the corresponding ingredient object
             #step.ingredients.append(findIngredient(token.text))
-            if not checkList(token.text, step_ingredients):
-                step_ingredients.append(token.text)
+            #if not checkList(token.text, step_ingredients):
+            step_ingredients.append(token.text)
+            step.ingredients.append(findIngredient(token.text))
         #elif checkList(token.text, all_ingredients_text):
             #step_ingredients.append(token.text)
             
     
-    print("STEP MATS: " + str(step_mats))
+    #print("STEP MATS: " + str(step_mats))
     print("STEP INGS: " + str(step_ingredients))
-    print("STEP ACTIONS: " + str(step_acts))
+    #print("STEP ACTIONS: " + str(step_acts))
+
     
-    print('\n')
+    #print('\n')
     return
 
 def printSteps(steps_array):
     for i in steps_array:
+        print(i)
         i.printStepIng()
 
 
@@ -442,7 +467,7 @@ if __name__ == "__main__":
 
     preprocessSpacy()
 
-    link = to_veg_link
+    link = fat_to_h_link
     scraper = scrape_me(link, wild_mode = True)
 
 
@@ -450,12 +475,22 @@ if __name__ == "__main__":
     print(all_ingredients_text)
 
     steps_array = buildStepsArray(scraper)
+    printSteps(steps_array)
 
     #for i in all_ingredients:
     #    print(i)
 
-    #print("START OF STEPS")
+    for i in all_ingredients:
+        print(i)
+
+    #Transform(fat_to_health, steps_array)
+
+    print("START OF TRANFROM STEPS")
     #printSteps(steps_array)
+
+    for i in all_ingredients:
+        print(i)
+   
 
     #for i in all_ingredients:
     #    if i.ingredient == "onion":
@@ -463,7 +498,7 @@ if __name__ == "__main__":
 
     #printSteps(steps_array)
 
-    #Transform(meat_to_veg)
+    
     #print("VEGETARIAN TRANSFORM")
 
     #for i in all_ingredients:
