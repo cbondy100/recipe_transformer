@@ -4,12 +4,14 @@ import nltk
 from nltk.tokenize import sent_tokenize
 import nltk.tag, nltk.data
 import spacy
+import string
 from spacy.symbols import ORTH, POS, NOUN, VERB
 
 nlp_spacy = spacy.load("en_core_web_sm")
 
 to_veg_link = "https://www.allrecipes.com/recipe/24074/alysias-basic-meat-lasagna/"
 fat_to_h_link = "https://www.allrecipes.com/recipe/16167/beef-bourguignon-i/"
+to_meat_link = "https://www.allrecipes.com/recipe/244716/shirataki-meatless-meat-pad-thai/"
 
 descriptions = ['baked', 'beaten', 'blanched', 'boiled', 'boiling', 'boned', 'breaded', 'brewed', 'broken', 'chilled',
 		'chopped', 'cleaned', 'coarse', 'cold', 'cooked', 'cool', 'cooled', 'cored', 'creamed', 'crisp', 'crumbled',
@@ -42,6 +44,8 @@ cooking_actions = ["preheat", "chop", "mince", "dice", "slice", "julienne", "gra
         "boil", "steam", "poach", "blanch", "deglaze", "reduce", "glaze", "baste", "stuff", "garnish", "plate", "serve", "store", "freeze", "defrost",
         "thaw", "clean", "sanitize", "set up", "clean up", "heat", "discard", "pour"]
 
+measures = ["cup", "teaspoon", "tablespoon", "ounce", "fluid ounce", "quart", "pint", "gallon", "package", "jar", "can", "container", "pound", "clove"]
+
 meat_to_veg = {
     'beef': 'portobello mushrooms',
     'chicken': 'tofu',
@@ -62,7 +66,11 @@ meat_to_veg = {
     'ham': 'seitan ham',
     'duck': 'seitan duck',
     'beef jerky': 'vegan jerky made from soy, mushroom, or seitan',
-    'chicken nuggets': 'vegan nuggets made from soy, seitan, or tempeh'}
+    'chicken nuggets': 'vegan nuggets made from soy, seitan, or tempeh',
+    'beef broth': 'vegetable broth',
+    'beef chuck roast': 'portobello mushrooms',
+    'beef sirloin' : 'portobello mushrooms'
+    }
 
 veg_to_meat = {
     'portobello mushrooms': 'steak',
@@ -73,7 +81,7 @@ veg_to_meat = {
     'lentils': 'ground beef',
     'black beans': 'beef',
     'textured vegetable protein (TVP)': 'ground beef',
-    'chickpeas': 'griound turkey',
+    'chickpeas': 'ground turkey',
     'mushrooms': 'beef',
     'tempeh': 'chicken',
     'tempeh bacon': 'bacon',
@@ -104,15 +112,17 @@ fat_to_health = {
     'pasta': 'zucchini noodles (zoodles)',
     'rice': 'cauliflower rice',
     'mayonnaise or butter': 'avocado',
-    'eggs': 'chia seeds',
     'ground beef': 'black beans',
     'meat': 'tofu',
     'white potatoes': 'sweet potatoes',
-    'lettuce in salads': 'spinach',
+    'lettuce': 'spinach',
     'chocolate': 'unsweetened cocoa powder',
     'ground beef': 'ground turkey',
     'bread crumbs': 'rolled oats',
-    'sugar': 'honey or maple syrup'
+    'sugar': 'honey or maple syrup',
+    'beef chuck roast': 'low-fat beef chuck roast',
+    'beef broth' : "low-fat beef broth",
+    'bacon' : 'turkey bacon'
 }
 
 health_to_fat = {
@@ -134,7 +144,9 @@ health_to_fat = {
     'ground turkey': 'ground beef',
     'rolled oats': 'bread crumbs',
     'maple syrup': 'corn syrup',
-    'honey': 'sugar'
+    'honey': 'sugar',
+    'brown sugar' : 'high fructose corn syrup',
+    'salmon steaks' : 'super fatty salmon steaks'
 }
 
 
@@ -170,7 +182,8 @@ to_thai = {
     "basil": "Thai basil",
     "tomatoes": "tamarind paste",
     "pasta": "rice noodles",
-    "vinegar": "rice vinegar"
+    "vinegar": "rice vinegar",
+    "provolone cheese" : "thai cheese"
 }
 
 to_gluten_free = {
@@ -181,7 +194,9 @@ to_gluten_free = {
     "tortillas": "corn tortillas",
     "pasta": "gluten-free pasta",
     "noodles": "sweet potato noodles",
-    "oatmeal": "quinoa flakes"
+    "oatmeal": "quinoa flakes",
+    "rolls" : "gluten free rolls",
+    "hoagie rolls" : "gluten free hoagie rolls"
 }
 
 gluten_free_to_gluten = {
@@ -192,22 +207,26 @@ gluten_free_to_gluten = {
     "corn tortillas": "tortillas",
     "gluten-free pasta": "pasta",
     "sweet potato noodles": "noodles",
-    "quinoa flakes": "oatmeal"
+    "quinoa flakes": "oatmeal",
 }
 
 to_lactose_free = {
-    "milk substitutes": "almond milk",
-    "butter substitutes": "vegan butter",
-    "cheese substitutes": "vegan cheese",
-    "cream substitutes": "coconut cream",
-    "yogurt substitutes": "coconut yogurt",
-    "ice cream substitutes": "non-dairy ice cream",
-    "sour cream substitutes": "coconut cream",
-    "condensed milk substitutes": "coconut condensed milk",
-    "whipped cream substitutes": "coconut cream",
-    "chocolate substitutes": "dark chocolate",
-    "protein powder substitutes": "plant-based protein powders",
-    "sweetened condensed milk substitutes": "coconut sweetened condensed milk"
+    "milk": "almond milk",
+    "butter": "vegan butter",
+    "cheese": "vegan cheese",
+    "swiss cheese" : " vegan swiss cheese",
+    "provolone cheese": "vegan provolone cheese",
+    "mozzarella cheese": "vegan mozzarella cheese",
+    "cream": "coconut cream",
+    "yogurt": "coconut yogurt",
+    "ice cream": "non-dairy ice cream",
+    "sour cream": "coconut cream",
+    "condensed milk": "coconut condensed milk",
+    "whipped cream": "coconut cream",
+    "semisweet choclate" : "super dark chocolate",
+    "chocolate": "dark chocolate",
+    "mascarpone cheese" : "vegan cream cheese",
+    "heavy cream" : "dairy free heavy cream"
 }
 
 lactose_free_to_dairy = {
@@ -221,7 +240,11 @@ lactose_free_to_dairy = {
     "plant-based protein powders": "protein powder substitutes"
 }
 
+def removePunc(a_string):
+    for char in string.punctuation:
+        a_string = a_string.replace(char, "")
 
+    return a_string
 
 
 def preprocessSpacy():
@@ -245,7 +268,7 @@ class recipeStep:
         self.materials = []
         self.actions = []
     def __str__(self):
-        return "Step " + str(self.step_num) + ": " + self.step_text
+        return "Step " + str(self.step_num) + '\n' + self.step_text
     
     def printStepIng(self):
         print("Step " + str(self.step_num))
@@ -280,7 +303,6 @@ def isFloat(str):
         return "NA"
 
 def buildIngredient(i_text):
-    measures = ["cup", "teaspoon", "tablespoon", "ounce", "fluid ounce", "quart", "pint", "gallon", "package", "jar", "can", "container", "pound", "clove"]
 
     i_class = RecipeIngredient(i_text)
 
@@ -333,7 +355,9 @@ def recipe_ingredients(scraper):
     return
 
 
-def DoubleIt(all_ingredients):
+def DoubleIt(steps_array):
+    #print("DOUBLING")
+   
     for i in all_ingredients:
         if i.quantity != "NA":
                 bool = False
@@ -341,11 +365,24 @@ def DoubleIt(all_ingredients):
                     bool = True
                 temp = i.quantity
                 i.quantity = temp*2
+                #print("UPDATED: " + str(i.quantity))
                 if i.quantity > 1 and bool == True:
                     if i.unit != "":
                         i.unit = i.unit + "s"
+                i.i_text = str(i.quantity) + " " + i.unit + " " + i.ingredient
 
-def HalfIt(all_ingredients):
+    for step in steps_array:
+        word_list = step.step_text.split(" ")
+        for inx, word in enumerate(word_list):
+            if word in measures or any(word in i.ingredient for i in all_ingredients) or word in makePlural(measures):
+                prev_word = word_list[inx - 1]
+                quant = isFloat(prev_word)
+                if quant != "NA":
+                    step.step_text = step.step_text.replace(prev_word, str(quant*2))
+                        
+
+
+def HalfIt():
     for i in all_ingredients:
         if i.quantity != "NA":
                 bool = False
@@ -356,33 +393,61 @@ def HalfIt(all_ingredients):
                 if i.quantity < 1 and bool == True:
                     if i.unit != "":
                         i.unit = i.unit[0:len(i.unit)-1]
+                i.i_text = str(i.quantity) + " " + i.unit + " " + i.ingredient
                     
 def Transform(type, steps_list):
-    #for i in all_ingredients:
-    #    for j in type.keys():
-    #        if i.ingredient == j:
-    #           i.i_text = i.i_text.replace(i.ingredient, type[j])
-    #            i.ingredient = type[j]
 
+    old_ingredients = all_ingredients
+    for i in old_ingredients:
+        try:
+            #print("Old Ingredient")
+            #print(i.ingredient)
+            replacement = type[i.ingredient]
+            j = i.ingredient
+            
+
+            for step in steps_list:
+                #print(step)
+                for ing in step.ingredients:
+                    if replacement not in ing.ingredient:
+                        if i == ing:
+                        #print("FOUND REPLACEMENT: " + replacement)
+                        #print("REPLACE: " + j)
+                            ing.i_text = ing.i_text.replace(j, replacement)
+                            step.step_text = step.step_text.replace(j, replacement)
+                            ing.ingredient = replacement
+                        #print("TRANSFORM STEP")
+                        #print(step.step_text)
+        except:
+            continue
+
+    for i in all_ingredients:
+        try:
+            replacement = type[i.ingredient]
+            i.i_text = i.i_text.replace(i.ingredient, replacement)
+            i.ingredient = replacement
+        except:
+            continue
+    
+    prev_word = "sdfgh"
     for step in steps_list:
-        print(step.step_text)
-        for i in step.ingredients:
-            print(i.ingredient)
+        word_list = step.step_text.split(" ")
+        for word in word_list:
+            word = removePunc(word)
             try:
-                print("TRANSFORM! Autobots, Roll Out!")
-                print(i.ingredient)
-                i.i_text = i.i_text.replace(i.ingredient, type[i.ingredient])
-                step.step_text = step.step_text.replace(i.ingredient, type[i.ingredient])
-                i.ingredient = type[i.ingredient]
-                print(i.i_text)
+                replacement = type[word]
+                if prev_word not in replacement:
+                    step.step_text = step.step_text.replace(word, replacement)
             except:
-                continue
+                pass
+            prev_word = word
                 
 
 def findIngredient(text):
     for i in all_ingredients:
         if text in i.ingredient:
             return i
+    return False
 
 #helper to check if word is already present in a list
 def checkList(text, list):
@@ -393,11 +458,11 @@ def checkList(text, list):
     return is_present
 
 def setStepFields(step):
-    banned_words = ["heat", "sauce", "degrees", "c", "f", "temperature"]
+    banned_words = ["heat", "sauce", "degrees", "c", "f", "temperature", "to", "a", "cheese", "-", "of", "hot"]
 
     step_text = step.step_text.lower()
     spacy_doc = nlp_spacy(step_text)
-   # print("STEP: " + step_text)
+    #print("STEP: " + step_text)
     #print(all_ingredients_text)
 
     step_ingredients = []
@@ -410,11 +475,13 @@ def setStepFields(step):
             step_mats.append(chunk.text)
             step.materials.append(chunk.text)
         if chunk.text in all_ingredients_text:
-            step_ingredients.append(chunk.text)
-            step.ingredients.append(findIngredient(chunk.text))
+            if findIngredient(chunk.text) is not False:
+                step_ingredients.append(chunk.text)
+                step.ingredients.append(findIngredient(chunk.text))
         elif checkList(chunk.root.text, all_ingredients_text) and not any(word in chunk.text for word in banned_words):
-            step_ingredients.append(chunk.text)
-            step.ingredients.append(findIngredient(chunk.text))
+            if findIngredient(chunk.text) is not False:
+                step_ingredients.append(chunk.text)
+                step.ingredients.append(findIngredient(chunk.text))
 
 
     for token in spacy_doc:
@@ -431,18 +498,22 @@ def setStepFields(step):
             # add the corresponding ingredient object
             #step.ingredients.append(findIngredient(token.text))
             #if not checkList(token.text, step_ingredients):
-            step_ingredients.append(token.text)
-            step.ingredients.append(findIngredient(token.text))
-        elif checkList(token.text, all_ingredients_text) and token.text not in banned_words:
-            step_ingredients.append(token.text)
-            step.ingredients.append(findIngredient(token.text))
+            
+            if findIngredient(token.text) is not False:
+                step_ingredients.append(token.text)
+                step.ingredients.append(findIngredient(token.text))
+        elif checkList(token.text, all_ingredients_text) and token.text not in banned_words and not checkList(token.text, step_ingredients):
+            
+            if findIngredient(token.text) is not False:
+                step_ingredients.append(token.text)
+                step.ingredients.append(findIngredient(token.text))
 
         #elif checkList(token.text, all_ingredients_text):
             #step_ingredients.append(token.text)
             
     
     #print("STEP MATS: " + str(step_mats))
-    print("STEP INGS: " + str(step_ingredients))
+    #print("STEP INGS: " + str(step_ingredients))
     #print("STEP ACTIONS: " + str(step_acts))
 
     
@@ -475,18 +546,36 @@ def buildStepsArray(scraper):
     return steps_array
 
 def prettyPrint(steps_array):
-    print("Ingredients:\n")
+    print("Ingredients:")
+    print("______________________________\n")
     for i in all_ingredients:
-        print(i.i_text, "\n")
+        print("\t - " + i.i_text)
+    print('\n')
+    print("______________________________")
+    print("\nDirections:")
+    print("______________________________\n")
 
-    print("\nRecipe Steps:\n")
     for step in steps_array:
         print(step, "\n")
+        
+def printHelp():
+    print("\nThat recipe sounds scrumpdiddlyumptious! Here's the menu of ways you can transform this recipe:\n")
+    print("1) Make it Vegetarian\n")
+    print("2) Take a Vegetarian recipe and make it meaty\n")
+    print("3) Make it Healthy\n")
+    print("4) Take a Healthy recipe and add some good, American, unhealthy flavor!\n")
+    print("5) Give it an Italian spin\n")
+    print("6) Give it a Thai twist\n")
+    print("7) Make it gluten free (and keep Callum alive)\n")
+    print("8) Add some gluten \n")
+    print("9) Make it lactose free\n")
+    print("10) Add some dairy and strengthen those bones\n")
+    print("11) Double the recipe\n")
+    print("12) Half the recipe\n")
+    print("\nType in one of these numbers to get your meal started!\n")
 
-
-def runChatbot(steps_array):
+def runChatbot():
     print("Welcome to Recipe Extravaganza 2.0!\n")
-    #printHelp()
     booli = True
     while booli:
         try:
@@ -503,50 +592,91 @@ def runChatbot(steps_array):
             #print("\nWhat, are you baked? You didn't give us a good link! Please try again\n")
             print("\nHmm not sure I can read that link. We recommend you give us a recipe from one of these websites:\nFoodNetwork.com\nAllRecipes.com\nTasteOfHome.com\nDelish.com\n")
        
+    printHelp()
+    
     while True:
-        query = input("")
+        
+        query = input("Pick a transform \n")
+        print('\n')
         #query = related(query)
         if query == "1":
             Transform(meat_to_veg, steps_array)
-            title = ("Vegetarian ")
+            title = "Vegetarian " + title
         elif query == "2":
             Transform(veg_to_meat, steps_array)
+            if "Meatless" in title:
+                title = title.remove("Meatless")
+            if "Vegetarian" in title:
+                title = title.remove("Vegetarian")
+            title = "Super Meaty " + title
         elif query == "3":
             Transform(fat_to_health, steps_array)
+            title = "Healthy " + title
         elif query == "4":
             Transform(health_to_fat, steps_array)
+            title = "Nice and Fatty " + title
         elif query == "5":
             Transform(to_italian, steps_array)
+            title = "Italian " + title
         elif query == "6":
             Transform(to_thai, steps_array)
+            title = "Thai " + title
         elif query == "7":
             Transform(to_gluten_free, steps_array)
+            title = "Gluten free " + title
         elif query == "8":
             Transform(gluten_free_to_gluten, steps_array)
+            if "Gluten Free" in title:
+                title = title.remove("Gluten Free")
+            title = "Now with gluten " + title
         elif query == "9":
             Transform(to_lactose_free, steps_array)
+            title = "Dairy free " + title
         elif query == "10":
             Transform(lactose_free_to_dairy, steps_array)
+            title = "Now with dairy " + title
         elif query == "11":
-            DoubleIt(all_ingredients)
+            DoubleIt(steps_array)
         elif query == "12":
-            HalfIt(all_ingredients)
+            HalfIt()
         
+        print("______________________________\n")
+        print("New Transformed Recipe:")
         print(title)
+        print("______________________________")
+        print("______________________________\n")
         prettyPrint(steps_array)
+
+        check = 3
+        while check == 3:
+            query2 = input("Do you want to perform another transformation to this already transformed recipe? (Yes/No)\n")
+            if query2.lower() == "yes":
+                break
+            elif query2.lower() == "no":
+                print("Enjoy your new recipe! See you soon.")
+                check = 2
+            else:
+                print("I didn't understand that, please type yes or no.")
+                check = 3
         
+        if check == 2:
+            break
+
 if __name__ == "__main__":
 
     preprocessSpacy()
 
-    #link = fat_to_h_link
-    #scraper = scrape_me(link, wild_mode = True)
+    # link = to_meat_link
+    # scraper = scrape_me(link, wild_mode = True)
 
 
-    #recipe_ingredients(scraper)
-    #print(all_ingredients_text)
+    # recipe_ingredients(scraper)
+    # #print(all_ingredients_text)
 
-    #steps_array = buildStepsArray(scraper)
+    # steps_array = buildStepsArray(scraper)
+
+    # Transform(veg_to_meat, steps_array)
+
     #printSteps(steps_array)
 
     runChatbot()
@@ -557,7 +687,6 @@ if __name__ == "__main__":
     #for i in all_ingredients:
     #    print(i)
 
-    #Transform(fat_to_health, steps_array)
 
     #print("START OF TRANFROM STEPS")
     #printSteps(steps_array)
