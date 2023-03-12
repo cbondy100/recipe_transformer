@@ -166,27 +166,11 @@ to_thai = {
     "chicken": "lemongrass chicken",
     "beef": "thai basil beef",
     "lamb": "massaman curry with lamb",
-    "cheese": "moconut milk",
+    "cheese": "coconut milk",
     "basil": "Thai basil",
     "tomatoes": "tamarind paste",
     "pasta": "rice noodles",
     "vinegar": "rice vinegar"
-}
-
-to_spanish = {
-    "Butter": "Olive oil",
-    "Chicken": "Pollo al ajillo (chicken in garlic sauce)",
-    "Beef": "Carne guisada (beef stew)",
-    "Lamb": "Cordero asado (roast lamb)",
-    "cheese": "Manchego",
-    "cheddar": "Queso fresco",
-    "bay leaves": "Hojas de laurel (bay leaves)",
-    "tomato sauce": "Sofrito (tomato and onion sauce)",
-    "rice": "Arroz (rice)",
-    "pasta": "Fideos (noodles)",
-    "white wine": "Jerez (sherry)",
-    "red wine": "Vino tinto (red wine)",
-    "vinegar": "Vinagre de Jerez (sherry vinegar)",
 }
 
 to_gluten_free = {
@@ -198,6 +182,17 @@ to_gluten_free = {
     "pasta": "gluten-free pasta",
     "noodles": "sweet potato noodles",
     "oatmeal": "quinoa flakes"
+}
+
+gluten_free_to_gluten = {
+    "almond flour": "wheat flour",
+    "quinoa": "rice",
+    "tamari": "soy sauce",
+    "oconut aminos": "soy sauce",
+    "corn tortillas": "tortillas",
+    "gluten-free pasta": "pasta",
+    "sweet potato noodles": "noodles",
+    "quinoa flakes": "oatmeal"
 }
 
 to_lactose_free = {
@@ -214,6 +209,18 @@ to_lactose_free = {
     "protein powder substitutes": "plant-based protein powders",
     "sweetened condensed milk substitutes": "coconut sweetened condensed milk"
 }
+
+lactose_free_to_dairy = {
+    "almond milk": "milk substitutes",
+    "vegan butter": "butter substitutes",
+    "vegan cheese": "cheese substitutes",
+    "coconut cream": "sour cream",
+    "coconut yogurt": "yogurt substitutes",
+    "non-dairy ice cream": "ice cream substitutes",
+    "dark chocolate": "chocolate substitutes",
+    "plant-based protein powders": "protein powder substitutes"
+}
+
 
 
 
@@ -238,7 +245,7 @@ class recipeStep:
         self.materials = []
         self.actions = []
     def __str__(self):
-        return "Step " + str(self.step_num) + ": " + self.step_text + "\n" + "Materials: " + str(self.materials) + "\n" + "Cooking Actions: " + str(self.actions) + "\n"
+        return "Step " + str(self.step_num) + ": " + self.step_text
     
     def printStepIng(self):
         print("Step " + str(self.step_num))
@@ -362,7 +369,7 @@ def Transform(type, steps_list):
         for i in step.ingredients:
             print(i.ingredient)
             try:
-                print("TRANSFORM")
+                print("TRANSFORM! Autobots, Roll Out!")
                 print(i.ingredient)
                 i.i_text = i.i_text.replace(i.ingredient, type[i.ingredient])
                 step.step_text = step.step_text.replace(i.ingredient, type[i.ingredient])
@@ -426,6 +433,10 @@ def setStepFields(step):
             #if not checkList(token.text, step_ingredients):
             step_ingredients.append(token.text)
             step.ingredients.append(findIngredient(token.text))
+        elif checkList(token.text, all_ingredients_text) and token.text not in banned_words:
+            step_ingredients.append(token.text)
+            step.ingredients.append(findIngredient(token.text))
+
         #elif checkList(token.text, all_ingredients_text):
             #step_ingredients.append(token.text)
             
@@ -463,33 +474,96 @@ def buildStepsArray(scraper):
 
     return steps_array
 
+def prettyPrint(steps_array):
+    print("Ingredients:\n")
+    for i in all_ingredients:
+        print(i.i_text, "\n")
+
+    print("\nRecipe Steps:\n")
+    for step in steps_array:
+        print(step, "\n")
+
+
+def runChatbot(steps_array):
+    print("Welcome to Recipe Extravaganza 2.0!\n")
+    #printHelp()
+    booli = True
+    while booli:
+        try:
+            recipe = input("Please give me a link to a recipe:\n")
+            if recipe == "quit":
+                print("Gone so soon? Come back with a recipe, have a nice day.")
+                return
+            scraper = scrape_me(recipe, wild_mode = True)
+            recipe_ingredients(scraper)
+            title = scraper.title()
+            steps_array = buildStepsArray(scraper)
+            booli = False
+        except:
+            #print("\nWhat, are you baked? You didn't give us a good link! Please try again\n")
+            print("\nHmm not sure I can read that link. We recommend you give us a recipe from one of these websites:\nFoodNetwork.com\nAllRecipes.com\nTasteOfHome.com\nDelish.com\n")
+       
+    while True:
+        query = input("")
+        #query = related(query)
+        if query == "1":
+            Transform(meat_to_veg, steps_array)
+            title = ("Vegetarian ")
+        elif query == "2":
+            Transform(veg_to_meat, steps_array)
+        elif query == "3":
+            Transform(fat_to_health, steps_array)
+        elif query == "4":
+            Transform(health_to_fat, steps_array)
+        elif query == "5":
+            Transform(to_italian, steps_array)
+        elif query == "6":
+            Transform(to_thai, steps_array)
+        elif query == "7":
+            Transform(to_gluten_free, steps_array)
+        elif query == "8":
+            Transform(gluten_free_to_gluten, steps_array)
+        elif query == "9":
+            Transform(to_lactose_free, steps_array)
+        elif query == "10":
+            Transform(lactose_free_to_dairy, steps_array)
+        elif query == "11":
+            DoubleIt(all_ingredients)
+        elif query == "12":
+            HalfIt(all_ingredients)
+        
+        print(title)
+        prettyPrint(steps_array)
+        
 if __name__ == "__main__":
 
     preprocessSpacy()
 
-    link = fat_to_h_link
-    scraper = scrape_me(link, wild_mode = True)
+    #link = fat_to_h_link
+    #scraper = scrape_me(link, wild_mode = True)
 
 
-    recipe_ingredients(scraper)
-    print(all_ingredients_text)
+    #recipe_ingredients(scraper)
+    #print(all_ingredients_text)
 
-    steps_array = buildStepsArray(scraper)
-    printSteps(steps_array)
+    #steps_array = buildStepsArray(scraper)
+    #printSteps(steps_array)
+
+    runChatbot()
 
     #for i in all_ingredients:
     #    print(i)
 
-    for i in all_ingredients:
-        print(i)
+    #for i in all_ingredients:
+    #    print(i)
 
     #Transform(fat_to_health, steps_array)
 
-    print("START OF TRANFROM STEPS")
+    #print("START OF TRANFROM STEPS")
     #printSteps(steps_array)
 
-    for i in all_ingredients:
-        print(i)
+   #for i in all_ingredients:
+    #    print(i)
    
 
     #for i in all_ingredients:
