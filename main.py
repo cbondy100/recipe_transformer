@@ -195,6 +195,8 @@ to_gluten_free = {
     "pasta": "gluten-free pasta",
     "noodles": "sweet potato noodles",
     "oatmeal": "quinoa flakes",
+    "all-purpose flour" : "almond flour",
+    "ladyfingers" : "gluten free ladyfingers",
     "rolls" : "gluten free rolls",
     "hoagie rolls" : "gluten free hoagie rolls"
 }
@@ -212,9 +214,9 @@ gluten_free_to_gluten = {
 
 to_lactose_free = {
     "milk": "almond milk",
-    "butter": "vegan butter",
+    "unsalted butter": "vegan butter",
     "cheese": "vegan cheese",
-    "swiss cheese" : " vegan swiss cheese",
+    "Swiss cheese" : " vegan swiss cheese",
     "provolone cheese": "vegan provolone cheese",
     "mozzarella cheese": "vegan mozzarella cheese",
     "cream": "coconut cream",
@@ -223,9 +225,10 @@ to_lactose_free = {
     "sour cream": "coconut cream",
     "condensed milk": "coconut condensed milk",
     "whipped cream": "coconut cream",
-    "semisweet choclate" : "super dark chocolate",
+    "semisweet chocolate" : "super dark chocolate",
     "chocolate": "dark chocolate",
-    "mascarpone cheese" : "vegan cream cheese",
+    "cream cheese" : "vegan cream cheese",
+    "mascarpone cheese" : "vegan mascarpone cheese",
     "heavy cream" : "dairy free heavy cream"
 }
 
@@ -605,9 +608,9 @@ def runChatbot():
         elif query == "2":
             Transform(veg_to_meat, steps_array)
             if "Meatless" in title:
-                title = title.remove("Meatless")
+                title = title.replace("Meatless", "")
             if "Vegetarian" in title:
-                title = title.remove("Vegetarian")
+                title = title.replace("Vegetarian", "")
             title = "Super Meaty " + title
         elif query == "3":
             Transform(fat_to_health, steps_array)
@@ -627,7 +630,7 @@ def runChatbot():
         elif query == "8":
             Transform(gluten_free_to_gluten, steps_array)
             if "Gluten Free" in title:
-                title = title.remove("Gluten Free")
+                title = title.replace("Gluten Free", "")
             title = "Now with gluten " + title
         elif query == "9":
             Transform(to_lactose_free, steps_array)
